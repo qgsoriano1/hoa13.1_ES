@@ -1,16 +1,36 @@
 ---
 
-- name: block IP address
-  hosts: all
-  connection: httpapi
-
+- hosts: all
+  become: true
   tasks:
 
-    - include_role:
-        name: acl_manager
-        tasks_from: block_ip
+  - name: enable UFW, allowing all the traffic
+    community.general.ufw:
+      state: enabled
+      policy: allow
 
-      vars:
-        source_ip: 192.168.56.111
-        destination_ip: 192.168.56.114
-        ansible_network_os: checkpoint
+  - name: set the logging
+    community.general.ufw:
+      logging: 'on'
+
+  - community.general.ufw:
+      rule: reject
+      port: auth
+      log: yes
+
+  - name: deny access to port 35
+    community.general.ufw:
+      rule: deny
+      port: '35'
+
+  - name: allow all of the access to port 53
+    community.general.ufw:
+      rule: allow
+      port: '53'
+      proto: tcp
+
+  - name: allow the port range 60000 - 61000
+    community.general.ufw:
+      rule: allow
+      port: 60000:61000
+      proto: tcp
